@@ -5,7 +5,7 @@
 #include "../world/MeshData.h"
 #include "../Types.h"
 
-inline void gaussSeidelIT1(Data::MeshDataC& constraints, Data::MeshDataGS& positions, Data::MeshDataVt& particles) {
+inline void gaussSeidelIT1(Data::MeshDataConstraints& constraints, Data::MeshDataGSeidel& positions, Data::MeshDataVertices& particles) {
 
     for (int i = 0; i < constraints.length.size(); i++) {
 

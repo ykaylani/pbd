@@ -1,7 +1,6 @@
 #ifndef TYPES
 #define TYPES
 #include <cmath>
-#include <math.h>
 
 struct float3 {
     float x, y, z;
@@ -16,6 +15,10 @@ struct float3 {
 
     float3 operator+(const float3& other) const {
         return {x + other.x, y + other.y, z + other.z};
+    }
+
+    float3 operator+(const float& other) const {
+        return {x + other, y + other, z + other};
     }
 
     float3 operator-(const float3& other) const {
@@ -44,5 +47,9 @@ struct float3 {
     }
 
 };
+
+inline float3 operator*(const float& a, const float3& b) {
+    return {a * b.x, a * b.y, a * b.z};
+}
 
 #endif //TYPES

@@ -3,30 +3,30 @@
 #include <vector>
 
 namespace Data {
-    struct MeshDataVt {
-        std::vector<float> vertX;
-        std::vector<float> vertY;
-        std::vector<float> vertZ;
+    struct MeshDataVertices {
+        std::vector<float> posX;
+        std::vector<float> posY;
+        std::vector<float> posZ;
 
-        std::vector<float> vertXp;
-        std::vector<float> vertYp;
-        std::vector<float> vertZp;
+        std::vector<float> prevPosX;
+        std::vector<float> prevPosY;
+        std::vector<float> prevPosZ;
 
-        std::vector<float> acX;
-        std::vector<float> acY;
-        std::vector<float> acZ;
+        std::vector<float> accelX;
+        std::vector<float> accelY;
+        std::vector<float> accelZ;
 
         std::vector<float> mass; //mass is ALWAYS inverse
     };
 
-    struct MeshDataC {
+    struct MeshDataConstraints {
         std::vector<int> idxA;
         std::vector<int> idxB;
 
         std::vector<float> length;
     };
 
-    struct MeshDataGS {
+    struct MeshDataGSeidel {
         std::vector<float> predictedPosX;
         std::vector<float> predictedPosY;
         std::vector<float> predictedPosZ;
