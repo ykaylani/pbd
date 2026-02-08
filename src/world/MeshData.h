@@ -3,7 +3,7 @@
 #include <vector>
 
 namespace Data {
-    struct MeshDataVertices {
+    struct VertexData {
         std::vector<float> posX;
         std::vector<float> posY;
         std::vector<float> posZ;
@@ -16,17 +16,18 @@ namespace Data {
         std::vector<float> accelY;
         std::vector<float> accelZ;
 
-        std::vector<float> mass; //mass is ALWAYS inverse
+        std::vector<float> mass;
     };
 
-    struct MeshDataConstraints {
+    struct ConstraintData {
         std::vector<int> idxA;
         std::vector<int> idxB;
 
         std::vector<float> length;
+        std::vector<float> stiffness;
     };
 
-    struct MeshDataGSeidel {
+    struct IntermediatePos {
         std::vector<float> predictedPosX;
         std::vector<float> predictedPosY;
         std::vector<float> predictedPosZ;

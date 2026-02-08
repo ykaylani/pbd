@@ -1,11 +1,10 @@
 #ifndef GAUSSSEIDEL
 #define GAUSSSEIDEL
-#include <cassert>
 
 #include "../world/MeshData.h"
 #include "../Types.h"
 
-inline void gaussSeidelIT1(Data::MeshDataConstraints& constraints, Data::MeshDataGSeidel& positions, Data::MeshDataVertices& particles) {
+inline void gaussSeidel(Data::ConstraintData& constraints, Data::IntermediatePos& positions, Data::VertexData& particles) {
 
     for (int i = 0; i < constraints.length.size(); i++) {
 
@@ -26,6 +25,8 @@ inline void gaussSeidelIT1(Data::MeshDataConstraints& constraints, Data::MeshDat
         float w1 = particles.mass[idxParticle1];
         float w2 = particles.mass[idxParticle2];
 
+        if (w1 + w2 == 0.0f) { continue; }
+
         float Cx = float3::magnitude(particle1pos - particle2pos) - constraints.length[i];
         float lambda = Cx / (w1 + w2);
 
@@ -35,13 +36,13 @@ inline void gaussSeidelIT1(Data::MeshDataConstraints& constraints, Data::MeshDat
         float3 dx1 = -lambda * w1 * x1C;
         float3 dx2 = -lambda * w2 * x2C;
 
-        positions.predictedPosX[idxParticle1] += dx1.x;
-        positions.predictedPosY[idxParticle1] += dx1.y;
-        positions.predictedPosZ[idxParticle1] += dx1.z;
+        positions.predictedPosX[idxParticle1] += dx1.x * constraints.stiffness[i];
+        positions.predictedPosY[idxParticle1] += dx1.y * constraints.stiffness[i];
+        positions.predictedPosZ[idxParticle1] += dx1.z * constraints.stiffness[i];
 
-        positions.predictedPosX[idxParticle2] += dx2.x;
-        positions.predictedPosY[idxParticle2] += dx2.y;
-        positions.predictedPosZ[idxParticle2] += dx2.z;
+        positions.predictedPosX[idxParticle2] += dx2.x * constraints.stiffness[i];
+        positions.predictedPosY[idxParticle2] += dx2.y * constraints.stiffness[i];
+        positions.predictedPosZ[idxParticle2] += dx2.z * constraints.stiffness[i];
     }
 }
 

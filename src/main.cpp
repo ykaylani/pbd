@@ -8,60 +8,112 @@
 
 int main() {
 
-    Data::MeshDataVertices vertices = Data::MeshDataVertices();
-    vertices.accelX.resize(2);
-    vertices.accelY.resize(2);
-    vertices.accelZ.resize(2);
+    int gridWidth = 10;
+    int gridHeight = 10;
+    int spacing = 5;
 
-    vertices.mass.resize(2);
+    int tVertices = gridWidth * gridHeight;
 
-    vertices.posX.resize(2);
-    vertices.posY.resize(2);
-    vertices.posZ.resize(2);
+    Data::VertexData vertices = Data::VertexData();
+    vertices.accelX.resize(tVertices);
+    vertices.accelY.resize(tVertices);
+    vertices.accelZ.resize(tVertices);
 
-    vertices.prevPosX.resize(2);
-    vertices.prevPosY.resize(2);
-    vertices.prevPosZ.resize(2);
+    vertices.mass.resize(tVertices);
 
-    vertices.posX[0] = 20;
-    vertices.posZ[0] = 5;
+    vertices.posX.resize(tVertices);
+    vertices.posY.resize(tVertices);
+    vertices.posZ.resize(tVertices);
+
+    vertices.prevPosX.resize(tVertices);
+    vertices.prevPosY.resize(tVertices);
+    vertices.prevPosZ.resize(tVertices);
+
+    for (int y = 0; y < gridHeight; y++) {
+        for (int x = 0; x < gridWidth; x++) {
+            int idx = y * gridWidth + x;
+
+            vertices.posX[idx] = x * spacing;
+            vertices.posY[idx] = 0.0f;
+            vertices.posZ[idx] = y * spacing;
+
+            if (y == 0 && (x == 0)) {
+                vertices.mass[idx] = 0.0f;
+            } else {
+                vertices.mass[idx] = 1.0f / 20.0f;
+            }
+
+        }
+    }
 
     vertices.prevPosX = vertices.posX;
     vertices.prevPosY = vertices.posY;
     vertices.prevPosZ = vertices.posZ;
 
-    vertices.mass[0] = 1.0 / 20.0;
-    vertices.mass[1] = 0;
-
     for (int i = 0; i < vertices.accelX.size(); i++) {
-        vertices.accelX[i] = World::gravity.x * vertices.mass[i];
-        vertices.accelY[i] = World::gravity.y * vertices.mass[i];
-        vertices.accelZ[i] = World::gravity.z * vertices.mass[i];
+        vertices.accelX[i] = World::GRAVITY.x;
+        vertices.accelY[i] = World::GRAVITY.y;
+        vertices.accelZ[i] = World::GRAVITY.z;
+
+        if (vertices.mass[i] == 0.0f) {
+            vertices.accelX[i] = 0;
+            vertices.accelY[i] = 0;
+            vertices.accelZ[i] = 0;
+        }
     }
 
-    Data::MeshDataConstraints constraints = Data::MeshDataConstraints();
-    constraints.idxA.resize(1);
-    constraints.idxB.resize(1);
-    constraints.length.resize(1);
+    Data::ConstraintData constraints = Data::ConstraintData();
 
-    constraints.length[0] = 20;
-    constraints.idxA[0] = 0;
-    constraints.idxB[0] = 1;
+    auto addConstraint = [&](int idxA, int idxB, float stiffness) {
+        float dx = vertices.posX[idxA] - vertices.posX[idxB];
+        float dy = vertices.posY[idxA] - vertices.posY[idxB];
+        float dz = vertices.posZ[idxA] - vertices.posZ[idxB];
+        float length = sqrt(dx*dx + dy*dy + dz*dz);
 
-    Data::MeshDataGSeidel gSeidelTemps = Data::MeshDataGSeidel();
+        constraints.idxA.push_back(idxA);
+        constraints.idxB.push_back(idxB);
+        constraints.length.push_back(length);
+        constraints.stiffness.push_back(stiffness);
+    };
+
+    for (int y = 0; y < gridHeight; y++) {
+        for (int x = 0; x < gridWidth; x++) {
+            int idx = y * gridWidth + x;
+
+            if (x < gridWidth - 1) {
+                int rightIdx = y * gridWidth + (x + 1);
+
+                if (y == 0) {
+                    addConstraint(idx, rightIdx, 0.3f);
+                } else {
+                    addConstraint(idx, rightIdx, 0.3f);
+                }
+            }
+
+            if (y < gridHeight - 1) {
+                int bottomIdx = (y + 1) * gridWidth + x;
+                addConstraint(idx, bottomIdx, 0.3f);
+            }
+
+            if (x < gridWidth - 1 && y < gridHeight - 1) {
+                int diagDownIdx = (y + 1) * gridWidth + (x + 1);
+                addConstraint(idx, diagDownIdx, 0.3f);
+
+                if (x > 0) {
+                    int diagDownLeftIdx = (y + 1) * gridWidth + (x - 1);
+                    addConstraint(idx, diagDownLeftIdx, 0.3f);
+                }
+            }
+        }
+    }
+
+    Data::IntermediatePos gSeidelTemps = Data::IntermediatePos();
     gSeidelTemps.predictedPosX = vertices.posX;
     gSeidelTemps.predictedPosY = vertices.posY;
     gSeidelTemps.predictedPosZ = vertices.posZ;
 
     std::ofstream csvFile("positions.csv");
-
-    if (!csvFile.is_open()) {
-        std::cerr << "Error: Could not open CSV file for writing!" << std::endl;
-        return 1;
-    }
-
-    csvFile << "PosX,PosY,PosZ" << std::endl;
-
+    csvFile << "Frame,Vertex,PosX,PosY,PosZ" << std::endl;
 
     for (int i = 0; i < 2048; i++) {
         for (int j = 0; j < vertices.accelX.size(); j++) {
@@ -73,14 +125,16 @@ int main() {
         }
 
         for (int j = 0; j < World::GS_ITER; j++) {
-            gaussSeidelIT1(constraints, gSeidelTemps, vertices);
+            gaussSeidel(constraints, gSeidelTemps, vertices);
         }
 
         for (int j = 0; j < vertices.accelX.size(); j++) {
             Stormer::two(vertices.posX[j], vertices.posY[j], vertices.posZ[j], vertices.prevPosX[j], vertices.prevPosY[j], vertices.prevPosZ[j], gSeidelTemps.predictedPosX[j], gSeidelTemps.predictedPosY[j], gSeidelTemps.predictedPosZ[j]);
         }
 
-        csvFile << i << "," << vertices.posX[0] << "," << vertices.posY[0] << "," << vertices.posZ[0] << std::endl;
+        for (int j = 0; j < vertices.accelX.size(); j++) {
+            csvFile << i << "," << j << "," << vertices.posX[j] << "," << vertices.posY[j] << "," << vertices.posZ[j] << std::endl;
+        }
     }
 
     csvFile.close();
