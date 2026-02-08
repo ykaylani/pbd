@@ -1,7 +1,8 @@
 #include <iostream>
+#include <fstream>
+
 #include "world/MeshData.h"
 #include "world/WorldDescription.h"
-
 #include "update/GaussSeidel.h"
 #include "update/Stormer.h"
 
@@ -23,6 +24,7 @@ int main() {
     vertices.prevPosZ.resize(2);
 
     vertices.posX[0] = 20;
+    vertices.posZ[0] = 5;
 
     vertices.prevPosX = vertices.posX;
     vertices.prevPosY = vertices.posY;
@@ -51,6 +53,15 @@ int main() {
     gSeidelTemps.predictedPosY = vertices.posY;
     gSeidelTemps.predictedPosZ = vertices.posZ;
 
+    std::ofstream csvFile("positions.csv");
+
+    if (!csvFile.is_open()) {
+        std::cerr << "Error: Could not open CSV file for writing!" << std::endl;
+        return 1;
+    }
+
+    csvFile << "PosX,PosY,PosZ" << std::endl;
+
 
     for (int i = 0; i < 2048; i++) {
         for (int j = 0; j < vertices.accelX.size(); j++) {
@@ -69,8 +80,11 @@ int main() {
             Stormer::two(vertices.posX[j], vertices.posY[j], vertices.posZ[j], vertices.prevPosX[j], vertices.prevPosY[j], vertices.prevPosZ[j], gSeidelTemps.predictedPosX[j], gSeidelTemps.predictedPosY[j], gSeidelTemps.predictedPosZ[j]);
         }
 
-        std::cout << vertices.posZ[0] << std::endl;
+        csvFile << i << "," << vertices.posX[0] << "," << vertices.posY[0] << "," << vertices.posZ[0] << std::endl;
     }
+
+    csvFile.close();
+    std::cout << "Position data written to positions.csv" << std::endl;
 
     return 0;
 }
