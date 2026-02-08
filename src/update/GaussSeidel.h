@@ -1,9 +1,11 @@
 #ifndef GAUSSSEIDEL
 #define GAUSSSEIDEL
-#include "../world/MeshData.h"
-#include "../types.h"
+#include <cassert>
 
-inline void GaussSeidelIT1(Data::MeshDataC& constraints, Data::MeshDataGS& positions, Data::MeshDataVt& particles) {
+#include "../world/MeshData.h"
+#include "../Types.h"
+
+inline void gaussSeidelIT1(Data::MeshDataC& constraints, Data::MeshDataGS& positions, Data::MeshDataVt& particles) {
 
     for (int i = 0; i < constraints.length.size(); i++) {
 
@@ -21,8 +23,8 @@ inline void GaussSeidelIT1(Data::MeshDataC& constraints, Data::MeshDataGS& posit
         float3 particle1pos = {particle1x, particle1y, particle1z};
         float3 particle2pos = {particle2x, particle2y, particle2z};
 
-        float w1 = 1 / particles.mass[idxParticle1];
-        float w2 = 1 / particles.mass[idxParticle2];
+        float w1 = particles.mass[idxParticle1];
+        float w2 = particles.mass[idxParticle2];
 
         float Cx = float3::magnitude(particle1pos - particle2pos) - constraints.length[i];
         float lambda = Cx / (w1 + w2);

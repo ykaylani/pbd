@@ -16,7 +16,7 @@ namespace Data {
         std::vector<float> acY;
         std::vector<float> acZ;
 
-        std::vector<float> mass;
+        std::vector<float> mass; //mass is ALWAYS inverse
     };
 
     struct MeshDataC {

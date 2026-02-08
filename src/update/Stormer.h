@@ -1,6 +1,6 @@
 #ifndef STORMER
 #define STORMER
-#include "../types.h"
+#include "../Types.h"
 #include "../world/WorldDescription.h"
 
 namespace Stormer {

@@ -10,8 +10,8 @@ struct float3 {
         return {x * other, y * other, z * other};
     }
 
-    friend float3 operator*(float scalar, const float3& vec) {
-        return {scalar * vec.x, scalar * vec.y, scalar * vec.z};
+    float3 operator*(const float3& vec) const {
+        return {x * vec.x, y * vec.y, z * vec.z};
     }
 
     float3 operator+(const float3& other) const {
@@ -39,7 +39,8 @@ struct float3 {
     }
 
     static float3 unit(const float3 &a) {
-        return {a.x / magnitude(a.x), a.x / magnitude(a.z), a.x / magnitude(a.z)};
+        float mag = magnitude(a);
+        return {a.x / mag, a.y / mag, a.z / mag};
     }
 
 };
