@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/yakaylani/pbd/build",
-  "command": "/usr/bin/c++   -g -std=gnu++23 -o CMakeFiles/pbd.dir/src/main.cpp.o -c /home/yakaylani/pbd/src/main.cpp",
-  "file": "/home/yakaylani/pbd/src/main.cpp",
-  "output": "CMakeFiles/pbd.dir/src/main.cpp.o"
-}
-]
