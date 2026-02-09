@@ -7,5 +7,5 @@ add_executable(pbd src/main.cpp
         src/world/MeshData.h
         src/world/WorldDescription.h
         src/update/Stormer.h
-        src/types.h
+        src/Types.h
         src/update/GaussSeidel.h)

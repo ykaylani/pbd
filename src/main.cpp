@@ -1,10 +1,13 @@
 #include <iostream>
 #include <fstream>
+#include <chrono>
 
 #include "world/MeshData.h"
 #include "world/WorldDescription.h"
 #include "update/GaussSeidel.h"
 #include "update/Stormer.h"
+
+#include "constraints/ConstraintEditor.h"
 
 int main() {
 
@@ -51,30 +54,15 @@ int main() {
     vertices.prevPosZ = vertices.posZ;
 
     for (int i = 0; i < vertices.accelX.size(); i++) {
+
+        if (vertices.mass[i] == 0) { continue; }
+
         vertices.accelX[i] = World::GRAVITY.x;
         vertices.accelY[i] = World::GRAVITY.y;
         vertices.accelZ[i] = World::GRAVITY.z;
-
-        if (vertices.mass[i] == 0.0f) {
-            vertices.accelX[i] = 0;
-            vertices.accelY[i] = 0;
-            vertices.accelZ[i] = 0;
-        }
     }
 
     Data::ConstraintData constraints = Data::ConstraintData();
-
-    auto addConstraint = [&](int idxA, int idxB, float stiffness) {
-        float dx = vertices.posX[idxA] - vertices.posX[idxB];
-        float dy = vertices.posY[idxA] - vertices.posY[idxB];
-        float dz = vertices.posZ[idxA] - vertices.posZ[idxB];
-        float length = sqrt(dx*dx + dy*dy + dz*dz);
-
-        constraints.idxA.push_back(idxA);
-        constraints.idxB.push_back(idxB);
-        constraints.length.push_back(length);
-        constraints.stiffness.push_back(stiffness);
-    };
 
     for (int y = 0; y < gridHeight; y++) {
         for (int x = 0; x < gridWidth; x++) {
@@ -84,24 +72,24 @@ int main() {
                 int rightIdx = y * gridWidth + (x + 1);
 
                 if (y == 0) {
-                    addConstraint(idx, rightIdx, 0.3f);
+                    addConstraint(idx, rightIdx, 0.3f, vertices, constraints);
                 } else {
-                    addConstraint(idx, rightIdx, 0.3f);
+                    addConstraint(idx, rightIdx, 0.3f, vertices, constraints);
                 }
             }
 
             if (y < gridHeight - 1) {
                 int bottomIdx = (y + 1) * gridWidth + x;
-                addConstraint(idx, bottomIdx, 0.3f);
+                addConstraint(idx, bottomIdx, 0.3f, vertices, constraints);
             }
 
             if (x < gridWidth - 1 && y < gridHeight - 1) {
                 int diagDownIdx = (y + 1) * gridWidth + (x + 1);
-                addConstraint(idx, diagDownIdx, 0.3f);
+                addConstraint(idx, diagDownIdx, 0.3f, vertices, constraints);
 
                 if (x > 0) {
                     int diagDownLeftIdx = (y + 1) * gridWidth + (x - 1);
-                    addConstraint(idx, diagDownLeftIdx, 0.3f);
+                    addConstraint(idx, diagDownLeftIdx, 0.3f, vertices, constraints);
                 }
             }
         }
@@ -114,6 +102,8 @@ int main() {
 
     std::ofstream csvFile("positions.csv");
     csvFile << "Frame,Vertex,PosX,PosY,PosZ" << std::endl;
+
+    std::chrono::time_point pre = std::chrono::system_clock::now();
 
     for (int i = 0; i < 2048; i++) {
         for (int j = 0; j < vertices.accelX.size(); j++) {
@@ -132,13 +122,19 @@ int main() {
             Stormer::two(vertices.posX[j], vertices.posY[j], vertices.posZ[j], vertices.prevPosX[j], vertices.prevPosY[j], vertices.prevPosZ[j], gSeidelTemps.predictedPosX[j], gSeidelTemps.predictedPosY[j], gSeidelTemps.predictedPosZ[j]);
         }
 
-        for (int j = 0; j < vertices.accelX.size(); j++) {
+        /*for (int j = 0; j < vertices.accelX.size(); j++) {
             csvFile << i << "," << j << "," << vertices.posX[j] << "," << vertices.posY[j] << "," << vertices.posZ[j] << std::endl;
-        }
+        }*/
     }
 
+    std::chrono::time_point post = std::chrono::system_clock::now();
+
+    std::chrono::duration tTime = post - pre;
+
+    std::cout << tTime << std::endl;
+
     csvFile.close();
-    std::cout << "Position data written to positions.csv" << std::endl;
+    //std::cout << "Position data written to positions.csv" << std::endl;
 
     return 0;
 }
