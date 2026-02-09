@@ -8,7 +8,7 @@ namespace World {
     constexpr int32_t HZ = 50;
     constexpr float DT = 1.0f / HZ;
 
-    constexpr int32_t GS_ITER = 5;
+    constexpr int32_t GS_ITER = 10;
 
     constexpr float CONSTRAINT_DAMPING = 0.99f;
 

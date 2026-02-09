@@ -1,19 +1,18 @@
+#include <chrono>
 #include <iostream>
 #include <fstream>
-#include <chrono>
 
 #include "world/MeshData.h"
 #include "world/WorldDescription.h"
 #include "update/GaussSeidel.h"
 #include "update/Stormer.h"
-
 #include "constraints/ConstraintEditor.h"
 
 int main() {
 
-    int gridWidth = 10;
-    int gridHeight = 10;
-    int spacing = 5;
+    int gridWidth = 100;
+    int gridHeight = 100;
+    int spacing = 1;
 
     int tVertices = gridWidth * gridHeight;
 
@@ -40,7 +39,7 @@ int main() {
             vertices.posY[idx] = 0.0f;
             vertices.posZ[idx] = y * spacing;
 
-            if (y == 0 && (x == 0)) {
+            if (y == 0 && (x == 0 || x == gridWidth - 1)) {
                 vertices.mass[idx] = 0.0f;
             } else {
                 vertices.mass[idx] = 1.0f / 20.0f;
@@ -55,7 +54,7 @@ int main() {
 
     for (int i = 0; i < vertices.accelX.size(); i++) {
 
-        if (vertices.mass[i] == 0) { continue; }
+        if (vertices.mass[i] == 0.0f) { continue; }
 
         vertices.accelX[i] = World::GRAVITY.x;
         vertices.accelY[i] = World::GRAVITY.y;
@@ -72,24 +71,24 @@ int main() {
                 int rightIdx = y * gridWidth + (x + 1);
 
                 if (y == 0) {
-                    addConstraint(idx, rightIdx, 0.3f, vertices, constraints);
+                    addConstraint(idx, rightIdx, 0.8f, vertices, constraints);
                 } else {
-                    addConstraint(idx, rightIdx, 0.3f, vertices, constraints);
+                    addConstraint(idx, rightIdx, 0.8f, vertices, constraints);
                 }
             }
 
             if (y < gridHeight - 1) {
                 int bottomIdx = (y + 1) * gridWidth + x;
-                addConstraint(idx, bottomIdx, 0.3f, vertices, constraints);
+                addConstraint(idx, bottomIdx, 0.8f, vertices, constraints);
             }
 
             if (x < gridWidth - 1 && y < gridHeight - 1) {
                 int diagDownIdx = (y + 1) * gridWidth + (x + 1);
-                addConstraint(idx, diagDownIdx, 0.3f, vertices, constraints);
+                addConstraint(idx, diagDownIdx, 0.8f, vertices, constraints);
 
                 if (x > 0) {
                     int diagDownLeftIdx = (y + 1) * gridWidth + (x - 1);
-                    addConstraint(idx, diagDownLeftIdx, 0.3f, vertices, constraints);
+                    addConstraint(idx, diagDownLeftIdx, 0.8f, vertices, constraints);
                 }
             }
         }
@@ -103,9 +102,9 @@ int main() {
     std::ofstream csvFile("positions.csv");
     csvFile << "Frame,Vertex,PosX,PosY,PosZ" << std::endl;
 
-    std::chrono::time_point pre = std::chrono::system_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
 
-    for (int i = 0; i < 2048; i++) {
+    for (int i = 0; i < 8192; i++) {
         for (int j = 0; j < vertices.accelX.size(); j++) {
             float3 res = Stormer::one(vertices.posX[j], vertices.posY[j], vertices.posZ[j], vertices.prevPosX[j], vertices.prevPosY[j], vertices.prevPosZ[j], vertices.accelX[j], vertices.accelY[j], vertices.accelZ[j]);
 
@@ -122,19 +121,18 @@ int main() {
             Stormer::two(vertices.posX[j], vertices.posY[j], vertices.posZ[j], vertices.prevPosX[j], vertices.prevPosY[j], vertices.prevPosZ[j], gSeidelTemps.predictedPosX[j], gSeidelTemps.predictedPosY[j], gSeidelTemps.predictedPosZ[j]);
         }
 
-        /*for (int j = 0; j < vertices.accelX.size(); j++) {
+        for (int j = 0; j < vertices.accelX.size(); j++) {
             csvFile << i << "," << j << "," << vertices.posX[j] << "," << vertices.posY[j] << "," << vertices.posZ[j] << std::endl;
-        }*/
+        }
     }
 
-    std::chrono::time_point post = std::chrono::system_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> time = end - start;
 
-    std::chrono::duration tTime = post - pre;
-
-    std::cout << tTime << std::endl;
+    std::cout << time << std::endl;
 
     csvFile.close();
-    //std::cout << "Position data written to positions.csv" << std::endl;
+    std::cout << "Position data written to positions.csv" << std::endl;
 
     return 0;
 }

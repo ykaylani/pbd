@@ -3,7 +3,7 @@
 #include "../world/MeshData.h"
 #include <cmath>
 
-void addConstraint(int idxA, int idxB, float stiffness, Data::VertexData vertices, Data::ConstraintData constraints) {
+void addConstraint(int idxA, int idxB, float stiffness, Data::VertexData& vertices, Data::ConstraintData& constraints) {
     float dx = vertices.posX[idxA] - vertices.posX[idxB];
     float dy = vertices.posY[idxA] - vertices.posY[idxB];
     float dz = vertices.posZ[idxA] - vertices.posZ[idxB];
