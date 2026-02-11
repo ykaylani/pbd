@@ -1,6 +1,6 @@
 #ifndef CONSTRAINTEDITOR
 #define CONSTRAINTEDITOR
-#include "../world/MeshData.h"
+#include "../mesh/MeshData.h"
 #include <cmath>
 
 void addConstraint(int idxA, int idxB, float stiffness, Data::VertexData& vertices, Data::ConstraintData& constraints) {

@@ -2,16 +2,17 @@
 #include <iostream>
 #include <fstream>
 
-#include "world/MeshData.h"
+#include "mesh/MeshData.h"
 #include "world/WorldDescription.h"
 #include "update/GaussSeidel.h"
 #include "update/Stormer.h"
 #include "constraints/ConstraintEditor.h"
+#include "update/PhysDescription.h"
 
 int main() {
 
-    int gridWidth = 100;
-    int gridHeight = 100;
+    int gridWidth = 10;
+    int gridHeight = 10;
     int spacing = 1;
 
     int tVertices = gridWidth * gridHeight;
@@ -56,9 +57,9 @@ int main() {
 
         if (vertices.mass[i] == 0.0f) { continue; }
 
-        vertices.accelX[i] = World::GRAVITY.x;
-        vertices.accelY[i] = World::GRAVITY.y;
-        vertices.accelZ[i] = World::GRAVITY.z;
+        vertices.accelX[i] = Setup::PhysDescription::GRAVITY.x;
+        vertices.accelY[i] = Setup::PhysDescription::GRAVITY.y;
+        vertices.accelZ[i] = Setup::PhysDescription::GRAVITY.z;
     }
 
     Data::ConstraintData constraints = Data::ConstraintData();
@@ -94,10 +95,10 @@ int main() {
         }
     }
 
-    Data::IntermediatePos gSeidelTemps = Data::IntermediatePos();
-    gSeidelTemps.predictedPosX = vertices.posX;
-    gSeidelTemps.predictedPosY = vertices.posY;
-    gSeidelTemps.predictedPosZ = vertices.posZ;
+    Data::IntermediatePos inters = Data::IntermediatePos();
+    inters.predictedPosX = vertices.posX;
+    inters.predictedPosY = vertices.posY;
+    inters.predictedPosZ = vertices.posZ;
 
     std::ofstream csvFile("positions.csv");
     csvFile << "Frame,Vertex,PosX,PosY,PosZ" << std::endl;
@@ -108,17 +109,42 @@ int main() {
         for (int j = 0; j < vertices.accelX.size(); j++) {
             float3 res = Stormer::one(vertices.posX[j], vertices.posY[j], vertices.posZ[j], vertices.prevPosX[j], vertices.prevPosY[j], vertices.prevPosZ[j], vertices.accelX[j], vertices.accelY[j], vertices.accelZ[j]);
 
-            gSeidelTemps.predictedPosX[j] = res.x;
-            gSeidelTemps.predictedPosY[j] = res.y;
-            gSeidelTemps.predictedPosZ[j] = res.z;
+            inters.predictedPosX[j] = res.x;
+            inters.predictedPosY[j] = res.y;
+            inters.predictedPosZ[j] = res.z;
         }
 
-        for (int j = 0; j < World::GS_ITER; j++) {
-            gaussSeidel(constraints, gSeidelTemps, vertices);
+        for (int j = 0; j < Setup::PhysDescription::CSOLVER_ITERATIONS; j++) {
+            for (int k = 0; k < constraints.stiffness.size(); k++) {
+
+                int idx1 = constraints.idxA[k];
+                int idx2 = constraints.idxB[k];
+
+                float& x1 = inters.predictedPosX[idx1];
+                float& y1 = inters.predictedPosY[idx1];
+                float& z1 = inters.predictedPosZ[idx1];
+
+                float& x2 = inters.predictedPosX[idx2];
+                float& y2 = inters.predictedPosY[idx2];
+                float& z2 = inters.predictedPosZ[idx2];
+
+                float3 pos1 = {x1, y1, z1};
+                float3 pos2 = {x2, y2, z2};
+
+                gaussSeidel(pos1, pos2, vertices.mass[idx1], vertices.mass[idx2], constraints.length[k], constraints.stiffness[k]);
+
+                x1 = pos1.x;
+                y1 = pos1.y;
+                z1 = pos1.z;
+
+                x2 = pos2.x;
+                y2 = pos2.y;
+                z2 = pos2.z;
+            }
         }
 
         for (int j = 0; j < vertices.accelX.size(); j++) {
-            Stormer::two(vertices.posX[j], vertices.posY[j], vertices.posZ[j], vertices.prevPosX[j], vertices.prevPosY[j], vertices.prevPosZ[j], gSeidelTemps.predictedPosX[j], gSeidelTemps.predictedPosY[j], gSeidelTemps.predictedPosZ[j]);
+            Stormer::two(vertices.posX[j], vertices.posY[j], vertices.posZ[j], vertices.prevPosX[j], vertices.prevPosY[j], vertices.prevPosZ[j], inters.predictedPosX[j], inters.predictedPosY[j], inters.predictedPosZ[j]);
         }
 
         for (int j = 0; j < vertices.accelX.size(); j++) {

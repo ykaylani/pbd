@@ -38,7 +38,11 @@ struct float3 {
     }
 
     static float magnitude(const float3& a) {
-        return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+        return std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+    }
+
+    static float sqrMagnitude(const float3& a) {
+        return a.x * a.x + a.y * a.y + a.z * a.z;
     }
 
     static float3 unit(const float3 &a) {
@@ -46,6 +50,9 @@ struct float3 {
         return {a.x / mag, a.y / mag, a.z / mag};
     }
 
+    static float3 cross(const float3& a, const float3& b) {
+        return {(a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x  * b.z), (a.x * b.y) - (a.y  * b.x)};
+    }
 };
 
 inline float3 operator*(const float& a, const float3& b) {

@@ -1,5 +1,6 @@
 #ifndef STORMER
 #define STORMER
+#include "PhysDescription.h"
 #include "../Types.h"
 #include "../world/WorldDescription.h"
 
@@ -11,7 +12,7 @@ namespace Stormer {
 
         float3 accel = {ax, ay, az};
 
-        return (currentPos * 2.0) - previousPos + (accel * (World::DT * World::DT));
+        return currentPos + Setup::PhysDescription::DAMPING * (currentPos - previousPos) + accel * (Setup::WorldDescription::DT * Setup::WorldDescription::DT);
     }
 
     static void two(float& xCurrent, float& yCurrent, float& zCurrent, float& xPrevious, float& yPrevious, float& zPrevious, float& xFuture, float& yFuture, float& zFuture) {

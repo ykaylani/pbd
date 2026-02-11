@@ -1,49 +1,22 @@
 #ifndef GAUSSSEIDEL
 #define GAUSSSEIDEL
-
-#include "../world/MeshData.h"
 #include "../Types.h"
 
-inline void gaussSeidel(Data::ConstraintData& constraints, Data::IntermediatePos& positions, Data::VertexData& particles) {
+inline void gaussSeidel(float3& particle1pos, float3& particle2pos, float weight1, float weight2, float distanceConstraint, float cStiffness) {
 
-    for (int i = 0; i < constraints.length.size(); i++) {
+    if (weight1 + weight2 == 0.0f) { return; }
 
-        int idxParticle1 = constraints.idxA[i];
-        int idxParticle2 = constraints.idxB[i];
+    float Cx = float3::magnitude(particle1pos - particle2pos) - distanceConstraint;
+    float lambda = Cx / (weight1 + weight2);
 
-        float particle1x = positions.predictedPosX[idxParticle1];
-        float particle1y = positions.predictedPosY[idxParticle1];
-        float particle1z = positions.predictedPosZ[idxParticle1];
+    float3 direction1 = float3::unit(particle1pos - particle2pos);
+    float3 direction2 = float3::unit(particle2pos - particle1pos);
 
-        float particle2x = positions.predictedPosX[idxParticle2];
-        float particle2y = positions.predictedPosY[idxParticle2];
-        float particle2z = positions.predictedPosZ[idxParticle2];
+    float3 dx1 = -lambda * weight1 * direction1;
+    float3 dx2 = -lambda * weight2 * direction2;
 
-        float3 particle1pos = {particle1x, particle1y, particle1z};
-        float3 particle2pos = {particle2x, particle2y, particle2z};
-
-        float w1 = particles.mass[idxParticle1];
-        float w2 = particles.mass[idxParticle2];
-
-        if (w1 + w2 == 0.0f) { continue; }
-
-        float Cx = float3::magnitude(particle1pos - particle2pos) - constraints.length[i];
-        float lambda = Cx / (w1 + w2);
-
-        float3 x1C = float3::unit(particle1pos - particle2pos);
-        float3 x2C = float3::unit(particle2pos - particle1pos);
-
-        float3 dx1 = -lambda * w1 * x1C;
-        float3 dx2 = -lambda * w2 * x2C;
-
-        positions.predictedPosX[idxParticle1] += dx1.x * constraints.stiffness[i];
-        positions.predictedPosY[idxParticle1] += dx1.y * constraints.stiffness[i];
-        positions.predictedPosZ[idxParticle1] += dx1.z * constraints.stiffness[i];
-
-        positions.predictedPosX[idxParticle2] += dx2.x * constraints.stiffness[i];
-        positions.predictedPosY[idxParticle2] += dx2.y * constraints.stiffness[i];
-        positions.predictedPosZ[idxParticle2] += dx2.z * constraints.stiffness[i];
-    }
+    particle1pos = particle1pos + dx1 * cStiffness;
+    particle2pos = particle2pos + dx2 * cStiffness;
 }
 
 #endif //GAUSSSEIDEL
