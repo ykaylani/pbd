@@ -25,6 +25,8 @@ namespace Data {
 
         std::vector<float> length;
         std::vector<float> stiffness;
+
+        std::vector<float> lambda;
     };
 
     struct IntermediatePos {

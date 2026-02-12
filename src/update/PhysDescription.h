@@ -5,9 +5,11 @@
 
 namespace Setup {
     namespace PhysDescription {
-        constexpr int32_t CSOLVER_ITERATIONS = 4;
+        constexpr int32_t CSOLVER_ITERATIONS = 15;
         constexpr float3 GRAVITY = float3(0.0f, -9.8f, 0.0f);
         constexpr float DAMPING = 0.995f;
+
+        constexpr float MATERIAL_M = 6.0f;
     }
 }
 

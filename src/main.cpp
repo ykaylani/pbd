@@ -9,11 +9,20 @@
 #include "constraints/ConstraintEditor.h"
 #include "update/PhysDescription.h"
 
+#ifdef _WIN32
+    #include <fcntl.h>
+    #include <io.h>
+#endif
+
 int main() {
 
-    int gridWidth = 10;
-    int gridHeight = 10;
-    int spacing = 1;
+    #ifdef _WIN32
+        _setmode(_fileno(stdout), _O_BINARY);
+    #endif
+
+    int gridWidth = 50;
+    int gridHeight = 50;
+    float spacing = 0.1f;
 
     int tVertices = gridWidth * gridHeight;
 
@@ -40,10 +49,10 @@ int main() {
             vertices.posY[idx] = 0.0f;
             vertices.posZ[idx] = y * spacing;
 
-            if (y == 0 && (x == 0 || x == gridWidth - 1)) {
+            if (y == 0 && (x <= 5 || x >= gridWidth - 5)) {
                 vertices.mass[idx] = 0.0f;
             } else {
-                vertices.mass[idx] = 1.0f / 20.0f;
+                vertices.mass[idx] = 1.0f / 0.0002f;
             }
 
         }
@@ -70,26 +79,22 @@ int main() {
 
             if (x < gridWidth - 1) {
                 int rightIdx = y * gridWidth + (x + 1);
+                addConstraint(idx, rightIdx, 200.0f, vertices, constraints);
 
-                if (y == 0) {
-                    addConstraint(idx, rightIdx, 0.8f, vertices, constraints);
-                } else {
-                    addConstraint(idx, rightIdx, 0.8f, vertices, constraints);
-                }
             }
 
             if (y < gridHeight - 1) {
                 int bottomIdx = (y + 1) * gridWidth + x;
-                addConstraint(idx, bottomIdx, 0.8f, vertices, constraints);
+                addConstraint(idx, bottomIdx, 200.0f, vertices, constraints);
             }
 
             if (x < gridWidth - 1 && y < gridHeight - 1) {
                 int diagDownIdx = (y + 1) * gridWidth + (x + 1);
-                addConstraint(idx, diagDownIdx, 0.8f, vertices, constraints);
+                addConstraint(idx, diagDownIdx, 20.0f, vertices, constraints);
 
                 if (x > 0) {
                     int diagDownLeftIdx = (y + 1) * gridWidth + (x - 1);
-                    addConstraint(idx, diagDownLeftIdx, 0.8f, vertices, constraints);
+                    addConstraint(idx, diagDownLeftIdx, 20.0f, vertices, constraints);
                 }
             }
         }
@@ -100,8 +105,8 @@ int main() {
     inters.predictedPosY = vertices.posY;
     inters.predictedPosZ = vertices.posZ;
 
-    std::ofstream csvFile("positions.csv");
-    csvFile << "Frame,Vertex,PosX,PosY,PosZ" << std::endl;
+    std::vector<float> interopBuffer(tVertices * 3); //python interop I/O buffer
+    std::cerr << "Points: " << tVertices << std::endl;
 
     std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
 
@@ -113,6 +118,8 @@ int main() {
             inters.predictedPosY[j] = res.y;
             inters.predictedPosZ[j] = res.z;
         }
+
+        std::ranges::fill(constraints.lambda, 0.0f);
 
         for (int j = 0; j < Setup::PhysDescription::CSOLVER_ITERATIONS; j++) {
             for (int k = 0; k < constraints.stiffness.size(); k++) {
@@ -131,7 +138,7 @@ int main() {
                 float3 pos1 = {x1, y1, z1};
                 float3 pos2 = {x2, y2, z2};
 
-                gaussSeidel(pos1, pos2, vertices.mass[idx1], vertices.mass[idx2], constraints.length[k], constraints.stiffness[k]);
+                gaussSeidelX(pos1, pos2, vertices.mass[idx1], vertices.mass[idx2], constraints.length[k], constraints.stiffness[k], constraints.lambda[k]);
 
                 x1 = pos1.x;
                 y1 = pos1.y;
@@ -147,18 +154,20 @@ int main() {
             Stormer::two(vertices.posX[j], vertices.posY[j], vertices.posZ[j], vertices.prevPosX[j], vertices.prevPosY[j], vertices.prevPosZ[j], inters.predictedPosX[j], inters.predictedPosY[j], inters.predictedPosZ[j]);
         }
 
-        for (int j = 0; j < vertices.accelX.size(); j++) {
-            csvFile << i << "," << j << "," << vertices.posX[j] << "," << vertices.posY[j] << "," << vertices.posZ[j] << std::endl;
+        //data processing for interop (remove this section if no viz along with the allocation above)
+        for (int j = 0; j < tVertices; j++) {
+            interopBuffer[j * 3 + 0] = vertices.posX[j];
+            interopBuffer[j * 3 + 1] = vertices.posY[j];
+            interopBuffer[j * 3 + 2] = vertices.posZ[j];
         }
+
+        std::cout.write(reinterpret_cast<const char*>(interopBuffer.data()), interopBuffer.size() * sizeof(float));
+        std::cout.flush();
     }
 
     std::chrono::time_point<std::chrono::steady_clock> end = std::chrono::steady_clock::now();
     std::chrono::duration<double> time = end - start;
-
-    std::cout << time << std::endl;
-
-    csvFile.close();
-    std::cout << "Position data written to positions.csv" << std::endl;
+    std::cerr << "Finished in: " << time << std::endl;
 
     return 0;
 }

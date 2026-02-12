@@ -10,3 +10,7 @@ add_executable(pbd src/main.cpp
         src/Types.h
         src/update/GaussSeidel.h
         src/update/PhysDescription.h)
+
+if(WIN32)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++ -static")
+endif()
